@@ -84,10 +84,7 @@ Note that the argument `rng` is optional in all functions. It is provided here a
 The frequency of recording results can be changed with the `saveat` keyword argument, or by specifying a frequency in the timerange.
 
 ```jldoctest label
-julia> Random.seed!(rng, 1730)
-StableRNGs.LehmerRNG(state=0x00000000000000000000000000000d85)
-
-julia> stochasticmodel(sirrates, u0, ( 1, 10 ), sirtransitionmatrix; saveat=2)
+julia> stochasticmodel(sirrates, rng, u0, ( 1, 10 ), sirtransitionmatrix; saveat=2)
 5×3 Matrix{Int64}:
  9  1  0
  3  6  1
@@ -95,7 +92,7 @@ julia> stochasticmodel(sirrates, u0, ( 1, 10 ), sirtransitionmatrix; saveat=2)
  0  5  5
  0  3  7
 
-julia> stochasticmodel(sirrates, u0, 1:2:10, sirtransitionmatrix)
+julia> stochasticmodel(sirrates, rng, u0, 1:2:10, sirtransitionmatrix)
 5×3 Matrix{Int64}:
  9  1  0
  4  6  0
@@ -107,10 +104,7 @@ julia> stochasticmodel(sirrates, u0, 1:2:10, sirtransitionmatrix)
 We can also save the result at every transition. In this case, a vector of transition times is also returned.
 
 ```jldoctest label
-julia> Random.seed!(rng, 1731)
-StableRNGs.LehmerRNG(state=0x00000000000000000000000000000d87)
-
-julia> outputs, tvalues = stochasticmodel(sirrates, u0, 10, sirtransitionmatrix; saveall=true)        
+julia> outputs, tvalues = stochasticmodel(sirrates, rng, u0, 10, sirtransitionmatrix; saveall=true)        
 (outputs = [9 1 0; 8 2 0; … ; 0 1 9; 0 1 9], outputtimes = [1.0, 1.0205795606381067, 1.029284702693061, 1.0332753533239936, 1.045267270196105, 1.1167063866824687, 1.1380226969077516, 1.2863190502582302, 1.2921413766728351, 1.4733643249493746, 2.0816040258619104, 2.4929352777261657, 2.6321321917026457, 3.325163559164519, 5.1620232305728235, 6.239134153023869, 7.495165936765575, 8.728178612405411, 9.141186836041156, 10.0])
 
 julia> outputs
@@ -163,9 +157,6 @@ julia> tvalues
 The default setting is to assume that the function calculating transition rates accepts the time. This can be cancelled by setting `broadcast_t=false` 
 
 ```jldoctest label
-julia> Random.seed!(rng, 1732)
-StableRNGs.LehmerRNG(state=0x00000000000000000000000000000d89)
-
 julia> function sirrates_2(u)
            s, i, r = u
            n = s + i + r
@@ -176,7 +167,7 @@ julia> function sirrates_2(u)
        end
 sirrates_2 (generic function with 1 method)
 
-julia> stochasticmodel(sirrates_2, u0, 1:10, sirtransitionmatrix; broadcast_t=false)
+julia> stochasticmodel(sirrates_2, rng, u0, 1:10, sirtransitionmatrix; broadcast_t=false)
 10×3 Matrix{Int64}:
  9  1  0
  7  3  0
@@ -193,9 +184,6 @@ julia> stochasticmodel(sirrates_2, u0, 1:10, sirtransitionmatrix; broadcast_t=fa
 A set of parameters can also be sent to the function. This can be a vector or any other structure. 
 
 ```jldoctest label
-julia> Random.seed!(rng, 1733)
-StableRNGs.LehmerRNG(state=0x00000000000000000000000000000d8b)
-
 julia> function sirrates_3(u, t, p)
            s, i, r = u
            n = s + i + r
@@ -211,7 +199,7 @@ julia> p = [ 2, 0.2 ]
  2.0
  0.2
 
-julia> stochasticmodel(sirrates_3, u0, 1:10, p, sirtransitionmatrix)
+julia> stochasticmodel(sirrates_3, rng, u0, 1:10, p, sirtransitionmatrix)
 10×3 Matrix{Int64}:
  9  1  0
  7  3  0
@@ -242,7 +230,7 @@ julia> struct Parameters
 julia> p2 = Parameters(2.0, 0.2)
 Parameters(2.0, 0.2)
 
-julia> stochasticmodel(sirrates_4, u0, 1:10, p2, sirtransitionmatrix)
+julia> stochasticmodel(sirrates_4, rng, u0, 1:10, p2, sirtransitionmatrix)
 10×3 Matrix{Int64}:
  9  1  0
  8  2  0
