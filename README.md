@@ -5,4 +5,6 @@
 
 This package is mainly built for my own use. It allows generation of a stochastic continuous-time compartmental model.
 
+The method is based on D. T. Gillespie, Exact stocastic simulation of coupled chemical reactions, _J Phys Chem_ *81*: 2340–2361 (1977).
+
 Please see documentation for details of use.
