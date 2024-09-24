@@ -62,13 +62,10 @@ The default settings record outputs at each integer time point
 ```jldoctest label
 julia> using Random, StableRNGs
 
-julia> rng = StableRNG(1)
+julia> rng = StableRNG(1729)
 StableRNGs.LehmerRNG(state=0x00000000000000000000000000000003)
 
-julia> Random.seed!(rng, 1729)
-StableRNGs.LehmerRNG(state=0x00000000000000000000000000000d83)
-
-julia> stochasticmodel(sirrates, u0, 1:10, sirtransitionmatrix)
+julia> stochasticmodel(sirrates, rng, u0, 1:10, sirtransitionmatrix)
 10×3 Matrix{Int64}:
  9  1  0
  6  3  1
@@ -81,6 +78,8 @@ julia> stochasticmodel(sirrates, u0, 1:10, sirtransitionmatrix)
  0  4  6
  0  4  6
 ```
+
+Note that the argument `rng` is optional in all functions. It is provided here along with use of `StableRNGs.jl` to ensure reproducability of the examples.
 
 The frequency of recording results can be changed with the `saveat` keyword argument, or by specifying a frequency in the timerange.
 

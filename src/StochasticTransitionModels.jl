@@ -1,12 +1,22 @@
 
 module StochasticTransitionModels
 
+using Random
 using StatsBase: sample, Weights 
+import Random: default_rng
 
 export stochasticiteration, stochasticmodel
 
 function stochasticiteration(
-    transitionfunction::Function, u::AbstractVector, t::Number, p, transitionmatrix::AbstractMatrix;
+    transitionfunction::Function, u::AbstractVector, args...; 
+    kwargs...
+)
+    return stochasticiteration(transitionfunction, default_rng(), u, args...; kwargs...)
+end
+
+function stochasticiteration(
+    transitionfunction::Function, rng::AbstractRNG, 
+    u::AbstractVector, t::Number, p, transitionmatrix::AbstractMatrix;
     broadcast_t=true, kwargs...
 )
     # calculate expected rate of each transition
@@ -16,11 +26,12 @@ function stochasticiteration(
         rates = transitionfunction(u, p)
     end
 
-    return stochasticiteration(rates, u, t, transitionmatrix; kwargs...)
+    return stochasticiteration(rates, rng, u, t, transitionmatrix; kwargs...)
 end
 
 function stochasticiteration(
-    transitionfunction::Function, u::AbstractVector, t::Number, transitionmatrix::AbstractMatrix;
+    transitionfunction::Function, rng::AbstractRNG, 
+    u::AbstractVector, t::Number, transitionmatrix::AbstractMatrix;
     broadcast_t=true, kwargs...
 )
     # calculate expected rate of each transition
@@ -30,11 +41,16 @@ function stochasticiteration(
         rates = transitionfunction(u)
     end
 
-    return stochasticiteration(rates, u, t, transitionmatrix; kwargs...)
+    return stochasticiteration(rates, rng, u, t, transitionmatrix; kwargs...)
+end
+
+function stochasticiteration(rates::AbstractVector, u::AbstractVector, args...; kwargs...)
+    return stochasticiteration(rates, default_rng(), u, args...; kwargs...)
 end
 
 function stochasticiteration(
-    rates::AbstractVector, u::AbstractVector, t::Number, transitionmatrix::AbstractMatrix;
+    rates::AbstractVector, rng::AbstractRNG, 
+    u::AbstractVector, t::Number, transitionmatrix::AbstractMatrix;
     maxtstep=Inf,
 )
     # check that there are the same number of compartments as columns in transitionmatrix
@@ -44,7 +60,7 @@ function stochasticiteration(
     @assert length(rates) == size(transitionmatrix, 1)
 
     # when is the change 
-    rnum = rand() 
+    rnum = rand(rng) 
     tstep = -log(rnum) / sum(rates)
 
     if tstep > maxtstep  # then nothing happens
@@ -53,7 +69,7 @@ function stochasticiteration(
     end
 
     # else, what happens 
-    eventid = sample(eachindex(rates), Weights(rates))
+    eventid = sample(rng, eachindex(rates), Weights(rates))
 
     # make the change 
     u += transitionmatrix[eventid, :]
@@ -62,41 +78,48 @@ function stochasticiteration(
     return ( u, t )
 end
 
+function stochasticmodel(transitionfunction::Function, u0::AbstractVector, args...; kwargs...) 
+    return stochasticmodel(transitionfunction, default_rng(), u0, args...; kwargs...)
+end
+
 function stochasticmodel(
-    transitionfunction::Function, u0::AbstractVector, duration::T, args...;
+    transitionfunction::Function, rng::AbstractRNG, u0::AbstractVector, duration::T, args...;
     kwargs...
 ) where T <: Number
     tspan = ( one(T), duration )
-    return stochasticmodel(transitionfunction, u0, tspan, args...; kwargs...)
+    return stochasticmodel(transitionfunction, rng, u0, tspan, args...; kwargs...)
 end
 
 function stochasticmodel(
-    transitionfunction::Function, u0::AbstractVector, tspan::Tuple{S, T}, args...;
+    transitionfunction::Function, rng::AbstractRNG, 
+    u0::AbstractVector, tspan::Tuple{S, T}, args...;
     saveat=one(S), kwargs...
 ) where {S <: Number, T <: Number}
     tspanvector = tspan[1]:saveat:tspan[2] 
-    return stochasticmodel(transitionfunction, u0, tspanvector, args...; kwargs...)
+    return stochasticmodel(transitionfunction, rng, u0, tspanvector, args...; kwargs...)
 end
 
 function stochasticmodel(
-    transitionfunction::Function, u0::AbstractVector{T}, tspanvector::AbstractVector, args...;
+    transitionfunction::Function, rng::AbstractRNG, 
+    u0::AbstractVector{T}, tspanvector::AbstractVector, args...;
     saveall=false, kwargs...
 ) where T
     if saveall 
         return _saveall_stochasticmodel(
-            transitionfunction, u0, tspanvector, args...; 
+            transitionfunction, rng, u0, tspanvector, args...; 
             kwargs...
         )
     else 
         return _nosaveall_stochasticmodel(
-            transitionfunction, u0, tspanvector, args...; 
+            transitionfunction, rng, u0, tspanvector, args...; 
             kwargs...
         )
     end
 end
 
 function _saveall_stochasticmodel(
-    transitionfunction::Function, u0::AbstractVector{T}, tspanvector::AbstractVector, args...;
+    transitionfunction::Function, rng::AbstractRNG, 
+    u0::AbstractVector{T}, tspanvector::AbstractVector, args...;
     broadcast_t=true, maxtstep=Inf, kwargs...
 ) where T
     outputs = zeros(T, 1, length(u0))
@@ -108,7 +131,7 @@ function _saveall_stochasticmodel(
     while t < last(tspanvector)
         timetolastt = last(tspanvector) - t
         u, t = stochasticiteration(
-            transitionfunction, u, t, args...; 
+            transitionfunction, rng, u, t, args...; 
             broadcast_t, maxtstep=min(maxtstep, timetolastt)
         )
         outputs = vcat(outputs, u')
@@ -119,7 +142,8 @@ function _saveall_stochasticmodel(
 end
 
 function _nosaveall_stochasticmodel(
-    transitionfunction::Function, u0::AbstractVector{T}, tspanvector::AbstractVector, args...;
+    transitionfunction::Function, rng::AbstractRNG, 
+    u0::AbstractVector{T}, tspanvector::AbstractVector, args...;
     steptosaveat=true, kwargs...
 ) where T
     outputs = zeros(T, length(tspanvector), length(u0))
@@ -127,19 +151,20 @@ function _nosaveall_stochasticmodel(
     u = u0 
     if steptosaveat 
         _steptodaveat_stochasticmodel!(
-            transitionfunction, outputs, u, tspanvector, args...; 
+            transitionfunction, rng, outputs, u, tspanvector, args...; 
             kwargs...
         )
     else
         _nosteptodaveat_stochasticmodel!(
-            transitionfunction, outputs, u, tspanvector, args...; 
+            transitionfunction, rng, outputs, u, tspanvector, args...; 
             kwargs...
         )
     end
     return outputs
 end
 
-function _steptodaveat_stochasticmodel!(transitionfunction, outputs, u, tspanvector, args...; 
+function _steptodaveat_stochasticmodel!(
+    transitionfunction, rng, outputs, u, tspanvector, args...; 
     broadcast_t=true, maxtstep=Inf,
 ) 
     i = 1 
@@ -147,7 +172,7 @@ function _steptodaveat_stochasticmodel!(transitionfunction, outputs, u, tspanvec
     while t < last(tspanvector)
         timetonextt = tspanvector[i+1] - t
         u, t = stochasticiteration(
-            transitionfunction, u, t, args...; 
+            transitionfunction, rng, u, t, args...; 
             broadcast_t, maxtstep=min(maxtstep, timetonextt)
         )
         if t == tspanvector[i+1]
@@ -157,7 +182,8 @@ function _steptodaveat_stochasticmodel!(transitionfunction, outputs, u, tspanvec
     end
 end
 
-function _nosteptodaveat_stochasticmodel!(transitionfunction, outputs, u, tspanvector, args...; 
+function _nosteptodaveat_stochasticmodel!(
+    transitionfunction, rng, outputs, u, tspanvector, args...; 
     broadcast_t=true, maxtstep=Inf,
 ) 
     i = 1 
@@ -165,7 +191,7 @@ function _nosteptodaveat_stochasticmodel!(transitionfunction, outputs, u, tspanv
     while t < last(tspanvector)
         timetolastt = last(tspanvector) - t
         u, t = stochasticiteration(
-            transitionfunction, u, t, args...; 
+            transitionfunction, rng, u, t, args...; 
             broadcast_t, maxtstep=min(maxtstep, timetonextt)
         )
         while t >= tspanvector[i+1]
