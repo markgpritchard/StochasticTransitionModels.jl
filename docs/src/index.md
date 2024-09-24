@@ -63,20 +63,20 @@ The default settings record outputs at each integer time point
 julia> using Random, StableRNGs
 
 julia> rng = StableRNG(1729)
-StableRNGs.LehmerRNG(state=0x00000000000000000000000000000003)
+StableRNGs.LehmerRNG(state=0x00000000000000000000000000000d83)
 
 julia> stochasticmodel(sirrates, rng, u0, 1:10, sirtransitionmatrix)
 10×3 Matrix{Int64}:
  9  1  0
- 6  3  1
- 2  6  2
- 1  6  3
+ 7  3  0
+ 5  5  0
+ 3  4  3
+ 2  4  4
+ 1  4  5
+ 1  4  5
+ 1  4  5
  0  5  5
- 0  4  6
- 0  4  6
- 0  4  6
- 0  4  6
- 0  4  6
+ 0  5  5
 ```
 
 Note that the argument `rng` is optional in all functions. It is provided here along with use of `StableRNGs.jl` to ensure reproducability of the examples.
@@ -87,70 +87,70 @@ The frequency of recording results can be changed with the `saveat` keyword argu
 julia> stochasticmodel(sirrates, rng, u0, ( 1, 10 ), sirtransitionmatrix; saveat=2)
 5×3 Matrix{Int64}:
  9  1  0
- 3  6  1
- 0  7  3
- 0  5  5
- 0  3  7
+ 1  9  0
+ 0  6  4
+ 0  4  6
+ 0  1  9
 
 julia> stochasticmodel(sirrates, rng, u0, 1:2:10, sirtransitionmatrix)
 5×3 Matrix{Int64}:
  9  1  0
- 4  6  0
  0  8  2
- 0  7  3
- 0  5  5
+ 0  6  4
+ 0  4  6
+ 0  1  9
 ```
 
 We can also save the result at every transition. In this case, a vector of transition times is also returned.
 
 ```jldoctest label
 julia> outputs, tvalues = stochasticmodel(sirrates, rng, u0, 10, sirtransitionmatrix; saveall=true)        
-(outputs = [9 1 0; 8 2 0; … ; 0 1 9; 0 1 9], outputtimes = [1.0, 1.0205795606381067, 1.029284702693061, 1.0332753533239936, 1.045267270196105, 1.1167063866824687, 1.1380226969077516, 1.2863190502582302, 1.2921413766728351, 1.4733643249493746, 2.0816040258619104, 2.4929352777261657, 2.6321321917026457, 3.325163559164519, 5.1620232305728235, 6.239134153023869, 7.495165936765575, 8.728178612405411, 9.141186836041156, 10.0])
+(outputs = [9 1 0; 8 2 0; … ; 0 0 10; 0 0 10], outputtimes = [1.0, 1.1937416718324927, 1.3152122995740403, 1.3914161806081558, 1.6662787047527419, 2.184717032201454, 2.6185520422547204, 2.7345941562589804, 3.189110023787074, 3.5695945359298555  …  3.8596475013976566, 4.545515561119796, 4.864699439234508, 5.278104163204452, 5.3511369134396265, 5.613730552879197, 6.549409122918718, 6.6204713368987695, 9.503801051031607, 10.0])
 
 julia> outputs
-20×3 Matrix{Int64}:
- 9  1  0
- 8  2  0
- 7  3  0
- 6  4  0
- 5  5  0
- 4  6  0
- 4  5  1
- 4  4  2
- 3  5  2
- 2  6  2
- 1  7  2
- 0  8  2
- 0  7  3
- 0  6  4
- 0  5  5
- 0  4  6
- 0  3  7
- 0  2  8
- 0  1  9
- 0  1  9
+21×3 Matrix{Int64}:
+ 9  1   0
+ 8  2   0
+ 7  3   0
+ 6  4   0
+ 6  3   1
+ 5  4   1
+ 4  5   1
+ 3  6   1
+ 2  7   1
+ 1  8   1
+ ⋮
+ 0  7   3
+ 0  6   4
+ 0  5   5
+ 0  4   6
+ 0  3   7
+ 0  2   8
+ 0  1   9
+ 0  0  10
+ 0  0  10
 
 julia> tvalues
-20-element Vector{Float64}:
+21-element Vector{Float64}:
   1.0
-  1.0205795606381067
-  1.029284702693061
-  1.0332753533239936
-  1.045267270196105
-  1.1167063866824687
-  1.1380226969077516
-  1.2863190502582302
-  1.2921413766728351
-  1.4733643249493746
-  2.0816040258619104
-  2.4929352777261657
-  2.6321321917026457
-  3.325163559164519
-  5.1620232305728235
-  6.239134153023869
-  7.495165936765575
-  8.728178612405411
-  9.141186836041156
+  1.1937416718324927
+  1.3152122995740403
+  1.3914161806081558
+  1.6662787047527419
+  2.184717032201454
+  2.6185520422547204
+  2.7345941562589804
+  3.189110023787074
+  3.5695945359298555
+  ⋮
+  4.545515561119796
+  4.864699439234508
+  5.278104163204452
+  5.3511369134396265
+  5.613730552879197
+  6.549409122918718
+  6.6204713368987695
+  9.503801051031607
  10.0
 ```
 
@@ -170,15 +170,15 @@ sirrates_2 (generic function with 1 method)
 julia> stochasticmodel(sirrates_2, rng, u0, 1:10, sirtransitionmatrix; broadcast_t=false)
 10×3 Matrix{Int64}:
  9  1  0
- 7  3  0
- 5  3  2
- 4  2  4
- 4  1  5
+ 4  6  0
+ 0  9  1
+ 0  6  4
+ 0  6  4
  0  5  5
- 0  1  9
- 0  1  9
- 0  1  9
- 0  1  9
+ 0  5  5
+ 0  5  5
+ 0  4  6
+ 0  2  8
 ```
 
 A set of parameters can also be sent to the function. This can be a vector or any other structure. 
@@ -202,15 +202,15 @@ julia> p = [ 2, 0.2 ]
 julia> stochasticmodel(sirrates_3, rng, u0, 1:10, p, sirtransitionmatrix)
 10×3 Matrix{Int64}:
  9  1  0
- 7  3  0
- 7  2  1
- 6  3  1
- 3  5  2
- 2  6  2
- 1  7  2
- 0  5  5
- 0  4  6
- 0  3  7
+ 6  4  0
+ 5  3  2
+ 5  2  3
+ 4  2  4
+ 3  2  5
+ 2  3  5
+ 2  1  7
+ 1  2  7
+ 1  1  8
 
 julia> function sirrates_4(u, t, p)
            s, i, r = u
@@ -233,13 +233,13 @@ Parameters(2.0, 0.2)
 julia> stochasticmodel(sirrates_4, rng, u0, 1:10, p2, sirtransitionmatrix)
 10×3 Matrix{Int64}:
  9  1  0
- 8  2  0
- 5  5  0
- 3  7  0
- 0  9  1
- 0  7  3
+ 6  3  1
+ 3  6  1
+ 0  5  5
+ 0  5  5
+ 0  5  5
+ 0  5  5
  0  5  5
  0  4  6
- 0  3  7
  0  3  7
 ```
